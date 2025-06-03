@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Propuesta Interactiva: Campaña Google Ads - La Casa de Luis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Google Inspired Palette -->
+    <!-- Application Structure Plan: Se ha diseñado una SPA con navegación por pestañas para segmentar la propuesta en partes lógicas: Resumen, Campaña General, Campaña Romántica, Análisis de Keywords, Audiencia (ahora con Mercados Emisores) y Próximos Pasos. Esta estructura evita abrumar al usuario con información, permitiendo una exploración progresiva y enfocada. El usuario puede obtener una vista general rápida y luego profundizar en los detalles de cada campaña, incluyendo un análisis detallado de palabras clave, preguntas de usuario y los principales mercados de origen de clientes. Se expanden los "Próximos Pasos" para incluir KPIs, optimización y sinergia SEO. Esta interactividad hace que una estrategia compleja sea tangible y fácil de comprender. Además, se integran herramientas de IA para generar ideas de anuncios y borradores de contenido, enriqueciendo la propuesta y ofreciendo valor añadido inmediato. -->
+    <!-- Visualization & Content Choices: 
+        - Estructura de Campaña -> Pestañas interactivas -> Permite al usuario enfocarse en una parte de la estrategia a la vez -> Vanilla JS.
+        - Presupuesto (hipotético) -> Informar sobre el enfoque de inversión -> Gráfico de Anillo -> Visualiza la mayor inversión en la campaña romántica, el principal USP -> Chart.js.
+        - Grupos de Anuncios / Palabras Clave / Anuncios -> Organizar y conectar la estructura de campaña -> Selector de botones interactivo -> Al hacer clic en un grupo de anuncios, se muestran las KW y el anuncio correspondiente. Esto clarifica la relación entre los elementos de la campaña de forma dinámica -> Vanilla JS.
+        - Análisis de Keywords -> Presentar KW principales, semánticas, preguntas de usuario y explicación de tipos de concordancia -> Listas estructuradas y texto -> Facilita la comprensión de la intención de búsqueda -> HTML/Tailwind.
+        - Público Objetivo y Extensiones (incluyendo Mercados Emisores) -> Presentar perfiles, herramientas y orígenes de clientes de forma clara -> Tarjetas y listas con iconos -> Mejora la legibilidad y el atractivo visual en comparación con texto plano -> HTML/Tailwind/Unicode.
+        - Próximos Pasos -> Organizar la información necesaria y detallar KPIs, optimización, gestión de presupuesto y sinergia SEO -> Lista estructurada y subsecciones -> Proporciona una clara llamada a la acción para el cliente -> HTML/Tailwind.
+        - Generador de Ideas para Anuncios -> Mejorar la creatividad publicitaria -> Botón + API Gemini -> Muestra sugerencias de texto para anuncios -> Vanilla JS + Fetch.
+        - Borrador de Contenido para Landing Page -> Facilitar la creación de contenido -> Botón + API Gemini -> Muestra un borrador de texto para una landing page específica -> Vanilla JS + Fetch.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        :root {
+            --google-blue: #1A73E8;
+            --google-blue-darker: #125ABC;
+            --google-border-grey: #DADCE0;
+            --google-light-background: #F8F9FA; /* Slightly off-white for main background */
+            --google-card-background: #FFFFFF; /* White for cards */
+            --google-text-grey: #5F6368;
+            --google-dark-text: #202124;
+            --google-green: #1E8E3E; /* Google Green for positive accents */
+            --google-yellow: #F9AB00;
+            --google-red: #D93025;
+        }
+        body { font-family: 'Roboto', 'Inter', sans-serif; background-color: var(--google-light-background); color: var(--google-dark-text); }
+        .tab-btn { 
+            color: var(--google-text-grey); 
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s ease-in-out; 
+            padding: 0.85rem 1.15rem; 
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+        .tab-btn.active { 
+            color: var(--google-blue); 
+            border-bottom-color: var(--google-blue); 
+            font-weight: 600;
+        }
+        .tab-btn:hover:not(.active) {
+            background-color: #F1F3F4; 
+            color: var(--google-dark-text);
+        }
+        .ad-group-btn {
+            background-color: var(--google-card-background);
+            color: var(--google-text-grey);
+            border: 1px solid var(--google-border-grey);
+            transition: all 0.2s ease-in-out;
+            font-weight: 500;
+        }
+        .ad-group-btn.active { 
+            background-color: var(--google-blue); 
+            color: white; 
+            border-color: var(--google-blue);
+        }
+        .ad-group-btn:hover:not(.active) {
+            background-color: #E8F0FE; /* Light blue for hover */
+            border-color: var(--google-blue);
+            color: var(--google-blue);
+        }
+        .chart-container { position: relative; width: 100%; max-width: 280px; margin-left: auto; margin-right: auto; height: 280px; }
+        .gemini-btn { 
+            background-color: var(--google-blue); 
+            color: white; 
+            padding: 0.6rem 1.2rem; 
+            border-radius: 0.25rem; 
+            font-size: 0.875rem; 
+            font-weight: 500;
+            transition: background-color 0.2s ease-in-out; 
+            cursor:pointer; 
+        }
+        .gemini-btn:hover { background-color: var(--google-blue-darker); }
+        .loading-indicator { font-style: italic; color: var(--google-text-grey); }
+        .gemini-output { 
+            border: 1px solid var(--google-border-grey); 
+            padding: 0.85rem; 
+            margin-top: 0.85rem; 
+            border-radius: 0.375rem; 
+            background-color: var(--google-light-background); 
+            white-space: pre-wrap; 
+            font-size: 0.875rem; 
+            color: var(--google-dark-text);
+            line-height: 1.6;
+        }
+        .content-card {
+            background-color: var(--google-card-background);
+            border: 1px solid var(--google-border-grey);
+            border-radius: 0.5rem; 
+            box-shadow: 0 1px 3px 0 rgba(60,64,67,0.3), 0 2px 6px 2px rgba(60,64,67,0.15);
+        }
+        .keyword-section { 
+            margin-bottom: 1.75rem; 
+            padding: 1.25rem; 
+            border: 1px solid var(--google-border-grey); 
+            border-radius: 0.5rem; 
+            background-color: var(--google-card-background); 
+        }
+        .keyword-section h3 { color: var(--google-blue); font-weight: 600; font-size: 1.15rem; }
+        .keyword-section h4 { font-weight: 500; font-size: 1rem; color: var(--google-dark-text); }
+        .keyword-section ul { list-style-type: '– '; padding-left: 1.25rem; color: var(--google-text-grey); margin-top: 0.5rem;}
+        .section-title { color: var(--google-dark-text); font-weight: 600; } /* For main H2s */
+        .subsection-title { color: var(--google-dark-text); font-weight: 500; font-size: 1.1rem; } /* For H3s within cards */
+        .header-title { color: var(--google-dark-text); font-family: 'Roboto', sans-serif; font-weight: 700;}
+        .header-subtitle { color: var(--google-blue); font-family: 'Roboto', sans-serif; font-weight: 500;}
+        .text-muted { color: var(--google-text-grey); }
+        .highlight-card {
+            border-left: 4px solid var(--google-blue);
+            background-color: #E8F0FE; 
+        }
+        .market-card {
+            padding: 1rem;
+            border: 1px solid var(--google-border-grey);
+            border-radius: 0.375rem; /* 6px */
+            background-color: var(--google-card-background);
+        }
+        .market-card h4 {
+            color: var(--google-blue);
+            font-weight: 600;
+        }
+        .list-disc { list-style-type: disc; }
+        .list-inside { list-style-position: inside; }
+        code { background-color: #F1F3F4; padding: 0.15rem 0.3rem; border-radius: 0.2rem; font-family: 'Roboto Mono', monospace; font-size: 0.85em; color: var(--google-dark-text); }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div class="container mx-auto px-4 py-6 md:px-6 md:py-8">
+
+        <header class="text-center mb-10">
+            <h1 class="text-3xl md:text-4xl header-title">Propuesta de Campaña Google Ads</h1>
+            <p class="text-lg header-subtitle mt-1">Apartamentos Rurales La Casa de Luis</p>
+        </header>
+
+        <div class="w-full max-w-6xl mx-auto">
+            <div class="border-b border-[var(--google-border-grey)] mb-8">
+                <nav class="flex flex-wrap -mb-px" aria-label="Tabs">
+                    <button class="tab-btn active" data-tab="summary">Resumen</button>
+                    <button class="tab-btn" data-tab="general">C. General</button>
+                    <button class="tab-btn" data-tab="romantica">C. Romántica</button>
+                    <button class="tab-btn" data-tab="keywords-analysis">Análisis KW</button>
+                    <button class="tab-btn" data-tab="audience">Audiencia</button>
+                    <button class="tab-btn" data-tab="next-steps">Próximos Pasos</button>
+                </nav>
+            </div>
+
+            <main id="tab-content">
+                <div id="summary" class="tab-pane active">
+                    <div class="content-card p-6 md:p-8">
+                        <h2 class="text-2xl section-title mb-3">Estrategia de Doble Enfoque con IA ✨</h2>
+                        <p class="mb-6 text-muted leading-relaxed">Para maximizar el alcance y la relevancia, proponemos una estrategia dividida en dos campañas principales. Una campaña "General" para captar a un público amplio interesado en el turismo rural en Extremadura, y una campaña "Romántica", altamente especializada, para atacar el nicho de mercado más rentable y diferenciador del alojamiento: las escapadas en pareja con jacuzzi. Ambas campañas se ven potenciadas con herramientas de IA para la generación de ideas creativas. Es crucial definir objetivos SMART desde el inicio y enfocar la optimización continua basada en datos.</p>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <h3 class="text-xl subsection-title mb-3 text-center">Enfoque de Campañas</h3>
+                                <div class="space-y-4">
+                                    <div class="p-4 rounded-md border border-[var(--google-border-grey)]">
+                                        <h4 class="font-semibold text-lg text-[var(--google-dark-text)]">1. Campaña General</h4>
+                                        <p class="text-muted text-sm">Captura de búsquedas de alojamiento rural en la región, enfocada en la ubicación y atracciones cercanas como Trujillo y Monfragüe.</p>
+                                    </div>
+                                    <div class="p-4 rounded-md highlight-card">
+                                        <h4 class="font-semibold text-lg text-[var(--google-blue)]">2. Campaña Romántica ✨</h4>
+                                        <p class="text-muted text-sm">Dirigida a parejas, promocionando activamente los elementos diferenciadores como el jacuzzi privado, la privacidad y el ambiente romántico.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <h3 class="text-xl subsection-title mb-3 text-center">Inversión Sugerida (Ejemplo)</h3>
+                                <div class="chart-container">
+                                    <canvas id="budgetChart"></canvas>
+                                </div>
+                                <p class="text-center text-sm text-muted mt-2">Se recomienda asignar un mayor presupuesto a la campaña con mayor potencial de conversión y alineada con los USPs.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="general" class="tab-pane hidden">
+                    <div class="content-card p-6 md:p-8">
+                        <h2 class="text-2xl section-title mb-1">Campaña General: <code class="text-xl font-normal">EXT - Apartamentos Rurales - General</code></h2>
+                        <p class="mb-6 text-muted leading-relaxed">El objetivo de esta campaña es asegurar la visibilidad para usuarios que buscan alojamiento rural en la región de Extremadura, posicionando "La Casa de Luis" como una opción ideal por su ubicación y acceso a puntos de interés cultural y natural.</p>
+                        <div id="general-ad-groups" class="flex flex-wrap gap-2 mb-6"></div>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="p-4 rounded-md border border-[var(--google-border-grey)]">
+                                <h3 class="font-semibold mb-3 subsection-title">Palabras Clave Sugeridas</h3>
+                                <ul id="general-keywords" class="space-y-2 text-sm text-muted"></ul>
+                            </div>
+                            <div class="p-4 rounded-md border border-[var(--google-border-grey)] bg-[var(--google-light-background)]">
+                                <h3 class="font-semibold mb-3 subsection-title text-[var(--google-blue)]">Ejemplo de Anuncio</h3>
+                                <div id="general-ad-preview" class="p-3 bg-white rounded-md shadow-sm mb-4 border border-[var(--google-border-grey)]"></div>
+                                <button id="generateGeneralAdIdeas" class="gemini-btn">✨ Generar Más Ideas</button>
+                                <div id="generalAdIdeasLoading" class="loading-indicator hidden mt-2">Cargando ideas...</div>
+                                <div id="generalAdIdeasOutput" class="gemini-output hidden"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="romantica" class="tab-pane hidden">
+                    <div class="content-card p-6 md:p-8">
+                        <h2 class="text-2xl section-title mb-1">Campaña Romántica: <code class="text-xl font-normal">EXT - Escapadas Románticas</code></h2>
+                         <p class="mb-6 text-muted leading-relaxed">Esta campaña es el pilar de la estrategia. Se enfoca en el principal valor diferencial del alojamiento, atrayendo a un público con alta intención de compra que busca específicamente una experiencia romántica, íntima y especial.</p>
+                        <div id="romantica-ad-groups" class="flex flex-wrap gap-2 mb-6"></div>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="p-4 rounded-md border border-[var(--google-border-grey)]">
+                                <h3 class="font-semibold mb-3 subsection-title">Palabras Clave Sugeridas</h3>
+                                <ul id="romantica-keywords" class="space-y-2 text-sm text-muted"></ul>
+                            </div>
+                            <div class="p-4 rounded-md border border-[var(--google-border-grey)] bg-[var(--google-light-background)]">
+                                <h3 class="font-semibold mb-3 subsection-title text-[var(--google-blue)]">Ejemplo de Anuncio</h3>
+                                <div id="romantica-ad-preview" class="p-3 bg-white rounded-md shadow-sm mb-4 border border-[var(--google-border-grey)]"></div>
+                                <button id="generateRomanticaAdIdeas" class="gemini-btn">✨ Generar Más Ideas</button>
+                                <div id="romanticaAdIdeasLoading" class="loading-indicator hidden mt-2">Cargando ideas...</div>
+                                <div id="romanticaAdIdeasOutput" class="gemini-output hidden"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="keywords-analysis" class="tab-pane hidden">
+                    <div class="content-card p-6 md:p-8">
+                        <h2 class="text-2xl section-title mb-4">Análisis de Palabras Clave e Intención de Búsqueda</h2>
+                        <p class="mb-6 text-muted leading-relaxed">Esta sección profundiza en las palabras clave que los potenciales huéspedes podrían utilizar para encontrar "La Casa de Luis". Entender estas búsquedas nos permite optimizar tanto el contenido web (SEO) como las campañas de Google Ads para atraer tráfico altamente cualificado.</p>
+                        
+                        <div class="mb-6 p-4 border border-[var(--google-border-grey)] rounded-md bg-[var(--google-light-background)]">
+                            <h3 class="text-lg subsection-title mb-2 text-[var(--google-blue)]">Tipos de Concordancia de Palabras Clave</h3>
+                            <p class="text-sm text-muted mb-1"><strong>Amplia:</strong> Máxima cobertura, puede mostrar anuncios para búsquedas relacionadas. Usar con precaución y muchas negativas.</p>
+                            <p class="text-sm text-muted mb-1"><strong>De Frase (<code class="text-sm">"palabra clave"</code>):</strong> Muestra anuncios si la búsqueda incluye la frase o variaciones cercanas. Equilibrio entre alcance y relevancia.</p>
+                            <p class="text-sm text-muted"><strong>Exacta (<code class="text-sm">[palabra clave]</code>):</strong> Máxima relevancia, la búsqueda debe ser idéntica o una variación muy cercana. Menor alcance, mayor CTR potencial.</p>
+                        </div>
+
+                        <div class="keyword-section">
+                            <h3 class="mb-3">KW Principal: <code>apartamentos rurales Extremadura</code></h3>
+                            <div class="grid md:grid-cols-2 gap-6">
+                                <div>
+                                    <h4 class="mb-2">Palabras Clave Semánticas:</h4>
+                                    <ul class="text-sm">
+                                        <li>alojamiento rural Extremadura</li>
+                                        <li>casas rurales con encanto Extremadura</li>
+                                        <li>turismo rural Extremadura</li>
+                                        <li>dónde dormir en Extremadura rural</li>
+                                        <li>apartamentos vacaciones Extremadura</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h4 class="mb-2">Preguntas de Usuario Típicas:</h4>
+                                    <ul class="text-sm">
+                                        <li>¿Cuáles son los mejores apartamentos rurales en Extremadura?</li>
+                                        <li>¿Dónde encontrar alojamiento rural tranquilo en Extremadura?</li>
+                                        <li>¿Apartamentos rurales en Extremadura con buenas vistas?</li>
+                                        <li>¿Precio de apartamentos rurales en Extremadura para fin de semana?</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="keyword-section">
+                            <h3 class="mb-3">KW Principal: <code>escapada romántica Extremadura con jacuzzi</code></h3>
+                             <div class="grid md:grid-cols-2 gap-6">
+                                <div>
+                                    <h4 class="mb-2">Palabras Clave Semánticas:</h4>
+                                    <ul class="text-sm">
+                                        <li>apartamentos con jacuzzi privado Extremadura</li>
+                                        <li>casas rurales románticas Extremadura</li>
+                                        <li>fin de semana romántico con jacuzzi Extremadura</li>
+                                        <li>alojamiento para parejas Extremadura jacuzzi</li>
+                                        <li>suite con hidromasaje Extremadura</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h4 class="mb-2">Preguntas de Usuario Típicas:</h4>
+                                    <ul class="text-sm">
+                                        <li>¿Dónde ir de escapada romántica en Extremadura con jacuzzi?</li>
+                                        <li>¿Qué apartamentos rurales en Extremadura tienen jacuzzi en la habitación?</li>
+                                        <li>¿Busco una casa rural para dos personas con jacuzzi en Extremadura?</li>
+                                        <li>¿Ofertas escapada romántica Extremadura con jacuzzi incluido?</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="keyword-section">
+                            <h3 class="mb-3">KW Principal: <code>alojamiento cerca de Trujillo y Monfragüe</code></h3>
+                            <div class="grid md:grid-cols-2 gap-6">
+                                <div>
+                                    <h4 class="mb-2">Palabras Clave Semánticas:</h4>
+                                    <ul class="text-sm">
+                                        <li>dormir cerca de Trujillo Extremadura</li>
+                                        <li>apartamentos rurales Parque Nacional Monfragüe</li>
+                                        <li>casas rurales entre Trujillo y Cáceres</li>
+                                        <li>alojamiento base para visitar Monfragüe</li>
+                                        <li>dónde alojarse para ver Trujillo y Monfragüe</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h4 class="mb-2">Preguntas de Usuario Típicas:</h4>
+                                    <ul class="text-sm">
+                                        <li>¿Qué alojamiento rural está bien ubicado para visitar Trujillo y Monfragüe?</li>
+                                        <li>¿Hay apartamentos rurales cerca de la entrada de Monfragüe?</li>
+                                        <li>¿Busco una casa rural tranquila cerca de Trujillo para explorar la zona?</li>
+                                        <li>¿Apartamentos con parking cerca de Trujillo para ruta turística?</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="audience" class="tab-pane hidden">
+                    <div class="content-card p-6 md:p-8">
+                        <h2 class="text-2xl section-title mb-4">Público Objetivo, Mercados Emisores y Extensiones</h2>
+                        <p class="mb-6 text-muted leading-relaxed">Identificar y segmentar correctamente a la audiencia, así como conocer los principales mercados de origen, es clave para el éxito. Combinaremos esto con extensiones de anuncio para maximizar la visibilidad y la tasa de clics (CTR).</p>
+                        
+                        <div class="grid lg:grid-cols-3 gap-6">
+                            <div class="lg:col-span-1">
+                                <h3 class="text-xl subsection-title mb-4">Perfiles de Audiencia</h3>
+                                <div class="space-y-4">
+                                    <div class="p-4 rounded-md highlight-card">
+                                        <h4 class="font-semibold text-[var(--google-blue)] subsection-title">💕 Parejas (25-65 años)</h4>
+                                        <p class="text-sm text-muted">El público principal. Buscan escapadas, aniversarios, experiencias con jacuzzi y privacidad. Son el foco de la campaña romántica.</p>
+                                    </div>
+                                    <div class="p-4 rounded-md border border-[var(--google-border-grey)]">
+                                        <h4 class="font-semibold subsection-title">🌳 Amantes de la Naturaleza (30-60 años)</h4>
+                                        <p class="text-sm text-muted">Interesados en senderismo, observación de aves y parques nacionales como Monfragüe.</p>
+                                    </div>
+                                     <div class="p-4 rounded-md border border-[var(--google-border-grey)]">
+                                        <h4 class="font-semibold subsection-title">🏛️ Turistas Culturales (35-70 años)</h4>
+                                        <p class="text-sm text-muted">Quieren visitar el patrimonio de Trujillo, Cáceres y Mérida. Buscan una base de operaciones cómoda y bien ubicada.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="lg:col-span-1">
+                                <h3 class="text-xl subsection-title mb-4">Mercados Emisores Clave</h3>
+                                <div class="space-y-3">
+                                    <div class="market-card">
+                                        <h4 class="text-base">📍 Comunidad de Madrid</h4>
+                                        <p class="text-xs text-muted">Principal emisor nacional. Buscan escapadas rurales y culturales. Buena conexión por A-5.</p>
+                                    </div>
+                                    <div class="market-card">
+                                        <h4 class="text-base">📍 Andalucía (Sevilla, Córdoba)</h4>
+                                        <p class="text-xs text-muted">Proximidad, interés en turismo de interior y patrimonio.</p>
+                                    </div>
+                                    <div class="market-card">
+                                        <h4 class="text-base">📍 Castilla y León (Salamanca, Ávila)</h4>
+                                        <p class="text-xs text-muted">Cercanía, interés en cultura y naturaleza compartida.</p>
+                                    </div>
+                                    <div class="market-card">
+                                        <h4 class="text-base">🌍 Portugal (Alentejo, Lisboa, Centro)</h4>
+                                        <p class="text-xs text-muted">Principal mercado internacional. Proximidad y lazos culturales. (96.8k turistas a Extremadura en 2022).</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="lg:col-span-1">
+                                <h3 class="text-xl subsection-title mb-4">Extensiones de Anuncio Clave</h3>
+                                <ul class="space-y-3 text-muted">
+                                    <li class="flex items-start"><span class="mr-3 text-xl text-[var(--google-blue)]">🔗</span> <div><span class="font-semibold text-[var(--google-dark-text)]">Enlaces de Sitio:</span> Para dirigir a secciones específicas como "Suite con Jacuzzi" o "Ofertas Parejas".</div></li>
+                                    <li class="flex items-start"><span class="mr-3 text-xl text-[var(--google-blue)]">📞</span> <div><span class="font-semibold text-[var(--google-dark-text)]">Llamada:</span> Facilita la reserva directa desde el anuncio en móviles.</div></li>
+                                    <li class="flex items-start"><span class="mr-3 text-xl text-[var(--google-blue)]">📍</span> <div><span class="font-semibold text-[var(--google-dark-text)]">Ubicación:</span> Muestra la dirección en el mapa, conectando con Google My Business.</div></li>
+                                    <li class="flex items-start"><span class="mr-3 text-xl text-[var(--google-blue)]">⭐</span> <div><span class="font-semibold text-[var(--google-dark-text)]">Texto Destacado:</span> Para resaltar USPs como "Jacuzzi Privado", "Ideal Parejas", "Total Privacidad".</div></li>
+                                     <li class="flex items-start"><span class="mr-3 text-xl text-[var(--google-blue)]">💰</span> <div><span class="font-semibold text-[var(--google-dark-text)]">Precio:</span> Muestra precios de paquetes o estancias para atraer a usuarios cualificados (ej. "Escapada desde 90€").</div></li>
+                                      <li class="flex items-start"><span class="mr-3 text-xl text-[var(--google-blue)]">🖼️</span> <div><span class="font-semibold text-[var(--google-dark-text)]">Imagen:</span> Muestra fotos atractivas de los apartamentos y jacuzzis directamente en los resultados de búsqueda.</div></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="next-steps" class="tab-pane hidden">
+                     <div class="content-card p-6 md:p-8">
+                        <h2 class="text-2xl section-title mb-4">Consideraciones y Próximos Pasos</h2>
+                        <p class="mb-6 text-muted leading-relaxed">Para afinar y lanzar esta estrategia de la manera más efectiva posible, es crucial definir objetivos claros (SMART), recopilar información adicional y establecer un plan de optimización continua.</p>
+                         
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <h3 class="text-xl subsection-title mb-3">Información Clave Necesaria</h3>
+                                <ul class="space-y-2 list-disc list-inside text-muted text-sm">
+                                    <li><b>Objetivos SMART:</b> A definir conjuntamente (Ej: Nº reservas, CPA deseado).</li>
+                                    <li><b>Presupuesto detallado:</b> Inversión mensual para Google Ads.</li>
+                                    <li><b>Ofertas y paquetes especiales:</b> Promociones para destacar.</li>
+                                    <li><b>Calendario de ocupación:</b> Para ajustar estacionalmente.</li>
+                                    <li><b>Competidores principales:</b> Para análisis y diferenciación.</li>
+                                    <li><b>Datos históricos (si existen):</b> Rendimiento de campañas previas.</li>
+                                    <li><b>Proceso de reserva actual:</b> Para optimizar el seguimiento.</li>
+                                </ul>
+                            </div>
+                            <div class="space-y-6">
+                                <div>
+                                    <h3 class="text-xl subsection-title mb-2">Gestión de Presupuesto y Puja</h3>
+                                    <ul class="space-y-1 list-disc list-inside text-muted text-sm">
+                                        <li>Iniciar con "Maximizar Clics" (con CPC Máx).</li>
+                                        <li>Evolucionar a "Maximizar Conversiones" o "CPA Objetivo" con datos suficientes.</li>
+                                        <li>Ajustar presupuesto entre campañas según rendimiento.</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h3 class="text-xl subsection-title mb-2">Métricas Clave (KPIs) y Optimización</h3>
+                                     <ul class="space-y-1 list-disc list-inside text-muted text-sm">
+                                        <li>CTR, CPC, Tasa de Conversión, CPA, Nivel de Calidad.</li>
+                                        <li>Optimización continua: Pruebas A/B de anuncios, gestión de KW (positivas y negativas), análisis de landing pages.</li>
+                                        <li>Revisión de informes de términos de búsqueda.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <hr class="my-6 border-[var(--google-border-grey)]">
+                        <div>
+                             <h3 class="text-xl subsection-title mb-3">Acciones Estratégicas Adicionales</h3>
+                             <ul class="space-y-3 list-disc list-inside text-muted text-sm">
+                                 <li><b>Seguimiento de Conversiones Exhaustivo:</b> Fundamental para medir el ROI real de las campañas (llamadas, formularios, clics en email/teléfono).</li>
+                                 <li><b>Sinergia SEO y Google Ads:</b> Utilizar datos de Ads para informar la estrategia SEO (palabras clave que convierten, contenido de interés). Una buena base SEO complementa y puede reducir la dependencia de Ads a largo plazo.</li>
+                                 <li><b>Optimización de Páginas de Destino (Landing Pages):</b> Crear o mejorar páginas específicas, especialmente para "Escapadas Románticas", asegurando relevancia, carga rápida y CTAs claros.
+                                    <div class="mt-3">
+                                        <button id="generateLandingPageDraft" class="gemini-btn">✨ Generar Borrador Landing Page</button>
+                                        <div id="landingPageLoading" class="loading-indicator hidden mt-2">Generando borrador...</div>
+                                        <div id="landingPageOutput" class="gemini-output hidden"></div>
+                                    </div>
+                                 </li>
+                             </ul>
+                        </div>
+                        <div class="mt-8 text-center">
+                            <p class="text-lg section-title mb-2">¿Listos para empezar?</p>
+                            <p class="text-muted mb-4">Contacta para discutir esta propuesta y definir los siguientes pasos para atraer más huéspedes a La Casa de Luis.</p>
+                            <button class="gemini-btn px-6 py-2.5 text-base">Agendar Reunión Estratégica</button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        const campaignData = {
+            general: {
+                name: 'EXT - Apartamentos Rurales - General',
+                ad_groups: [
+                    { 
+                        id: 'GA1.1', name: 'Apartamentos Rurales Santa Cruz Sierra',
+                        keywords: ['"apartamentos rurales Santa Cruz de la Sierra"', '"alojamiento en Santa Cruz de la Sierra Cáceres"', '[casa rural Santa Cruz de la Sierra]'],
+                        ad: {
+                            titles: ['Apartamentos en Santa Cruz de la Sierra', 'La Casa de Luis | Rural y Confort', 'Tu Base en Extremadura'],
+                            description: 'Apartamentos rurales a 15km de Trujillo. Comodidad y naturaleza para tu viaje a Extremadura. ¡Reserva tu estancia!'
+                        }
+                    },
+                    { 
+                        id: 'GA1.2', name: 'Casas Rurales Cerca Trujillo',
+                        keywords: ['"casas rurales cerca de Trujillo"', '"alojamiento rural Trujillo Extremadura"', '[casas rurales Trujillo]'],
+                        ad: {
+                            titles: ['Apartamentos Cerca de Trujillo', 'La Casa de Luis | Rural y Confort', 'Explora Trujillo y Monfragüe'],
+                            description: 'Descubre la belleza de Trujillo, Cáceres y Monfragüe desde La Casa de Luis. Wifi y parking gratis. ¡Infórmate!'
+                        }
+                    },
+                    { 
+                        id: 'GA1.3', name: 'Alojamiento Rural Monfragüe',
+                        keywords: ['"apartamentos cerca Parque Nacional Monfragüe"', '"alojamiento rural Monfragüe"', '[casa rural Monfragüe]'],
+                        ad: {
+                            titles: ['Alojamiento Cerca de Monfragüe', 'La Casa de Luis | Naturaleza Pura', 'Base para Tu Aventura'],
+                            description: 'Tu punto de partida ideal para explorar el Parque Nacional de Monfragüe. Apartamentos equipados. ¡Consulta disponibilidad!'
+                        }
+                    }
+                ]
+            },
+            romantica: {
+                name: 'EXT - Escapadas Románticas',
+                ad_groups: [
+                    { 
+                        id: 'GA2.1', name: 'Escapada Romántica Extremadura',
+                        keywords: ['"escapada romántica Extremadura"', '"fin de semana romántico Extremadura"', '[alojamiento romántico Extremadura]'],
+                        ad: {
+                            titles: ['Escapada Romántica Extremadura', 'La Casa de Luis | Amor Rural', 'Sorprende a Tu Pareja'],
+                            description: 'Vive una escapada romántica inolvidable. Apartamentos con encanto, jacuzzi y total privacidad en La Casa de Luis. ¡Reserva ya!'
+                        }
+                    },
+                    { 
+                        id: 'GA2.2', name: 'Apartamentos con Jacuzzi Privado Extremadura',
+                        keywords: ['"apartamento rural Extremadura con jacuzzi privado"', '"casa rural con jacuzzi para dos Extremadura"', '[suite con jacuzzi Extremadura]'],
+                        ad: {
+                            titles: ['Apartamentos con Jacuzzi Privado', 'Suite con Jacuzzi en Extremadura', 'Tu Relax Romántico Asegurado'],
+                            description: 'Disfruta de un jacuzzi privado en tu apartamento rural. La Casa de Luis, tu opción ideal para una escapada romántica en Extremadura.'
+                        }
+                    },
+                    { 
+                        id: 'GA2.3', name: 'Fin de Semana Romántico Trujillo',
+                        keywords: ['"fin de semana romántico Trujillo"', '"escapada pareja Trujillo"', '[hotel romántico Trujillo]'],
+                        ad: {
+                            titles: ['Finde Romántico en Trujillo', 'Apartamentos para Parejas', 'Cerca del Casco Histórico'],
+                            description: 'Sorprende a tu pareja con un fin de semana mágico cerca de Trujillo. Historia, gastronomía y el mejor descanso.'
+                        }
+                    },
+                     { 
+                        id: 'GA2.4', name: 'Hoteles Rurales con Encanto Parejas',
+                        keywords: ['"hoteles rurales con encanto parejas Extremadura"', '"casas rurales para dos personas Extremadura"', '[alojamiento íntimo Extremadura]'],
+                        ad: {
+                            titles: ['Hoteles Rurales con Encanto', 'Alojamiento Íntimo para Parejas', 'La Casa de Luis | Solo para Dos'],
+                            description: 'Descubre un lugar con encanto para dos. Privacidad, confort y un entorno natural único en Extremadura.'
+                        }
+                    }
+                ]
+            }
+        };
+
+        const tabs = document.querySelectorAll('.tab-btn');
+        const panes = document.querySelectorAll('.tab-pane');
+        let currentGeneralAdGroupId = campaignData.general.ad_groups.length > 0 ? campaignData.general.ad_groups[0].id : null;
+        let currentRomanticaAdGroupId = campaignData.romantica.ad_groups.length > 0 ? campaignData.romantica.ad_groups[0].id : null;
+
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(item => item.classList.remove('active'));
+                tab.classList.add('active');
+
+                panes.forEach(pane => {
+                    pane.classList.add('hidden');
+                    pane.classList.remove('active'); 
+                });
+                const activePane = document.getElementById(tab.dataset.tab);
+                activePane.classList.remove('hidden');
+                activePane.classList.add('active');
+            });
+        });
+
+        function createAdPreview(ad) {
+            return `
+                <p class="text-[var(--google-blue)] text-lg font-medium">${ad.titles.join(' | ')}</p>
+                <p class="text-[var(--google-green)] text-sm">www.apartamentosruraleslacasadeluis.com</p>
+                <p class="text-[var(--google-text-grey)] text-sm">${ad.description}</p>
+            `;
+        }
+        
+        function setupCampaignTab(campaignKey) {
+            const adGroupsContainer = document.getElementById(`${campaignKey}-ad-groups`);
+            const keywordsList = document.getElementById(`${campaignKey}-keywords`);
+            const adPreview = document.getElementById(`${campaignKey}-ad-preview`);
+            const campaign = campaignData[campaignKey];
+            
+            if (!adGroupsContainer || !keywordsList || !adPreview || !campaign) return;
+
+            adGroupsContainer.innerHTML = '';
+            campaign.ad_groups.forEach((group, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'ad-group-btn text-sm px-3 py-1.5 rounded-md';
+                btn.textContent = group.name;
+                btn.dataset.campaign = campaignKey;
+                btn.dataset.groupId = group.id;
+                if(index === 0) btn.classList.add('active');
+                adGroupsContainer.appendChild(btn);
+            });
+            
+            function updateContent(groupId) {
+                const group = campaign.ad_groups.find(g => g.id === groupId);
+                if (!group) return;
+
+                if (campaignKey === 'general') currentGeneralAdGroupId = groupId;
+                if (campaignKey === 'romantica') currentRomanticaAdGroupId = groupId;
+
+                keywordsList.innerHTML = group.keywords.map(kw => `<li><span class="font-mono bg-gray-100 px-2 py-0.5 rounded text-xs text-[var(--google-text-grey)]">${kw}</span></li>`).join('');
+                adPreview.innerHTML = createAdPreview(group.ad);
+                
+                const ideasOutput = document.getElementById(`${campaignKey}AdIdeasOutput`);
+                if (ideasOutput) {
+                    ideasOutput.classList.add('hidden');
+                    ideasOutput.innerHTML = '';
+                }
+            }
+
+            adGroupsContainer.addEventListener('click', (e) => {
+                if(e.target.tagName === 'BUTTON') {
+                    adGroupsContainer.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    updateContent(e.target.dataset.groupId);
+                }
+            });
+            if (campaign.ad_groups.length > 0) {
+                updateContent(campaign.ad_groups[0].id);
+            }
+        }
+
+        setupCampaignTab('general');
+        setupCampaignTab('romantica');
+
+        const budgetChartCtx = document.getElementById('budgetChart');
+        if (budgetChartCtx) {
+            // Get computed styles for CSS variables
+            const rootStyles = getComputedStyle(document.documentElement);
+            const googleCardBackgroundColor = rootStyles.getPropertyValue('--google-card-background').trim() || '#FFFFFF'; // Fallback
+            const googleTextGreyColor = rootStyles.getPropertyValue('--google-text-grey').trim() || '#5F6368'; // Fallback
+            const googleDarkTextColor = rootStyles.getPropertyValue('--google-dark-text').trim() || '#202124'; // Fallback
+
+            new Chart(budgetChartCtx.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Campaña Romántica', 'Campaña General'],
+                    datasets: [{
+                        label: 'Distribución de Presupuesto',
+                        data: [65, 35],
+                        backgroundColor: ['#4285F4', '#A6C8F2'], 
+                        borderColor: [googleCardBackgroundColor], 
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { 
+                            position: 'bottom',
+                            labels: { color: googleTextGreyColor, font: { family: "'Roboto', sans-serif" }}
+                        },
+                        tooltip: { 
+                            callbacks: { label: function(context) { return `${context.label}: ${context.raw}%`; } },
+                            backgroundColor: googleDarkTextColor, 
+                            titleColor: '#FFFFFF',
+                            bodyColor: '#FFFFFF',
+                            bodyFont: { family: "'Roboto', sans-serif" },
+                            titleFont: { family: "'Roboto', sans-serif" }
+                        }
+                    },
+                    cutout: '65%'
+                }
+            });
+        }
+
+
+        async function callGeminiAPI(promptText) {
+            const apiKey = ""; 
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            
+            const payload = {
+                contents: [{ role: "user", parts: [{ text: promptText }] }]
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error("Error en API Gemini:", response.status, errorData);
+                    return `Error al contactar la API de Gemini: ${response.status}. Detalles en consola. Si estás usando esto en Coda.io, asegúrate de haber añadido tu API Key.`;
+                }
+                const result = await response.json();
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    return result.candidates[0].content.parts[0].text;
+                } else {
+                    console.error("Respuesta inesperada de API Gemini:", result);
+                    return "No se pudo obtener una respuesta válida de la IA. Detalles en consola.";
+                }
+            } catch (error) {
+                console.error("Error en la llamada fetch:", error);
+                return "Error de conexión al generar contenido. Revisa la consola.";
+            }
+        }
+        
+        const genGeneralAdIdeasBtn = document.getElementById('generateGeneralAdIdeas');
+        if (genGeneralAdIdeasBtn) {
+            genGeneralAdIdeasBtn.addEventListener('click', async () => {
+                const adGroup = campaignData.general.ad_groups.find(g => g.id === currentGeneralAdGroupId);
+                if (!adGroup) return;
+                const prompt = `Eres un experto en Google Ads. Para "Apartamentos Rurales La Casa de Luis" en Santa Cruz de la Sierra, Extremadura, genera 2-3 ideas de texto para anuncios de Google Ads para el grupo de anuncios "${adGroup.name}". Cada idea debe incluir 3 títulos cortos (máx 30 caracteres) y 1 descripción corta (máx 90 caracteres). Enfócate en atraer a un público general interesado en turismo rural, Trujillo, y Monfragüe. Ejemplo de formato por idea:\nTítulos:\n- Título 1\n- Título 2\n- Título 3\nDescripción:\n- Texto de la descripción.`;
+                
+                document.getElementById('generalAdIdeasLoading').classList.remove('hidden');
+                document.getElementById('generalAdIdeasOutput').classList.add('hidden');
+                const ideas = await callGeminiAPI(prompt);
+                document.getElementById('generalAdIdeasLoading').classList.add('hidden');
+                document.getElementById('generalAdIdeasOutput').textContent = ideas;
+                document.getElementById('generalAdIdeasOutput').classList.remove('hidden');
+            });
+        }
+
+        const genRomanticaAdIdeasBtn = document.getElementById('generateRomanticaAdIdeas');
+        if (genRomanticaAdIdeasBtn) {
+            genRomanticaAdIdeasBtn.addEventListener('click', async () => {
+                const adGroup = campaignData.romantica.ad_groups.find(g => g.id === currentRomanticaAdGroupId);
+                if (!adGroup) return;
+                const prompt = `Eres un experto en Google Ads. Para "Apartamentos Rurales La Casa de Luis" en Santa Cruz de la Sierra, Extremadura, genera 2-3 ideas de texto para anuncios de Google Ads para el grupo de anuncios "${adGroup.name}". Cada idea debe incluir 3 títulos cortos (máx 30 caracteres) y 1 descripción corta (máx 90 caracteres). Enfócate en atraer parejas buscando escapadas románticas, apartamentos con jacuzzi y privacidad. Ejemplo de formato por idea:\nTítulos:\n- Título 1\n- Título 2\n- Título 3\nDescripción:\n- Texto de la descripción.`;
+
+                document.getElementById('romanticaAdIdeasLoading').classList.remove('hidden');
+                document.getElementById('romanticaAdIdeasOutput').classList.add('hidden');
+                const ideas = await callGeminiAPI(prompt);
+                document.getElementById('romanticaAdIdeasLoading').classList.add('hidden');
+                document.getElementById('romanticaAdIdeasOutput').textContent = ideas;
+                document.getElementById('romanticaAdIdeasOutput').classList.remove('hidden');
+            });
+        }
+        
+        const genLandingPageDraftBtn = document.getElementById('generateLandingPageDraft');
+        if (genLandingPageDraftBtn) {
+            genLandingPageDraftBtn.addEventListener('click', async () => {
+                const prompt = `Eres un experto en copywriting para turismo. Redacta un borrador de texto corto y persuasivo para la sección principal de una página de destino (landing page) para "Apartamentos Rurales La Casa de Luis", ubicados en Santa Cruz de la Sierra, Extremadura. El objetivo de la página es atraer parejas para escapadas románticas. Destaca elementos clave como: ambiente íntimo, apartamentos con jacuzzi privado, privacidad, belleza del entorno natural de Extremadura, y la proximidad a Trujillo para visitas culturales. El tono debe ser evocador y romántico. Incluye un título atractivo, un párrafo introductorio y 2-3 puntos destacados o pequeños párrafos sobre los beneficios. Finaliza con una llamada a la acción suave para contactar o reservar.`;
+
+                document.getElementById('landingPageLoading').classList.remove('hidden');
+                document.getElementById('landingPageOutput').classList.add('hidden');
+                const draft = await callGeminiAPI(prompt);
+                document.getElementById('landingPageLoading').classList.add('hidden');
+                document.getElementById('landingPageOutput').textContent = draft;
+                document.getElementById('landingPageOutput').classList.remove('hidden');
+            });
+        }
+    </script>
+
+</body>
+</html>
