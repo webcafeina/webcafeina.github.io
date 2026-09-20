@@ -49,3 +49,28 @@ La carpeta de proyecto lleva el nombre base **sin** `formatoVersion`. Cada timel
 propios ajustes, reencuadre, mezcla y gráficos cuando el formato lo requiera.
 
 Crea otro proyecto cuando cambie la pieza, la idea o el CTA, salvo que Nacho pida agruparlas.
+
+## Varios agentes sobre el mismo encargo
+
+Cuando más de un agente (o más de una herramienta) monta las mismas piezas para compararlas,
+cada uno **etiqueta sus archivos con su nombre, justo antes de la extensión**, y exporta a su
+propia subcarpeta. Nunca se sobrescriben los archivos del otro.
+
+```text
+exports/<agente>/                       exports/<agente>/briefings/
+exports/<agente>/audio/                 exports/<agente>/broll/
+
+YYYYMMDD-cliente-cta-formatoVersion-<agente>.mp4
+YYYYMMDD-cliente-cta-formatoVersion-<agente>-briefing.md
+YYYYMMDD-cliente-cta-formatoVersion-<agente>.fcpxml
+```
+
+La etiqueta va también en el proyecto y en las timelines de Resolve
+(`20260920-cliente-idea-creativa-claude`), para que los dos proyectos puedan convivir.
+
+**Aviso sobre carpetas sincronizadas (Google Drive, Dropbox, iCloud).** Escribir el proyecto
+de Resolve, los renders intermedios o el `estado.json` directamente en una carpeta
+sincronizada produce copias de conflicto («archivo copia.ext») cuando el cliente de
+sincronización compite con el proceso que escribe, y puede corromper un proyecto de Resolve
+abierto. Trabaja en disco local y **copia a la carpeta sincronizada solo el resultado**, con
+la sincronización en pausa durante el render si hace falta.
