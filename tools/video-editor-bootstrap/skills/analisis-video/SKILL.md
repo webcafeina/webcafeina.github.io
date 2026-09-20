@@ -1,7 +1,7 @@
 ---
-name: analisis-video
-description: Analiza videos locales con la API de Gemini y devuelve resumenes, dialogo, explicaciones visuales, critica y momentos utiles con marcas de tiempo. Usalo cuando se pida examinar un video del ordenador o de un disco externo, seleccionar clips, encontrar tomas para un guion, transcribir con tiempos o criticar un montaje. No se activa solo por localizar archivos ni por editar un video sin analizarlo.
-argument-hint: [ruta-del-video] [pregunta]
+name: "analisis-video"
+description: "Analiza videos locales con la API de Gemini y devuelve resumenes, dialogo, explicaciones visuales, critica y momentos utiles con marcas de tiempo. Usalo cuando se pida examinar un video del ordenador o de un disco externo, seleccionar clips, encontrar tomas para un guion, transcribir con tiempos o criticar un montaje. No se activa solo por localizar archivos ni por editar un video sin analizarlo."
+argument-hint: "[ruta-del-video] [pregunta]"
 ---
 
 # Análisis de vídeo con Gemini

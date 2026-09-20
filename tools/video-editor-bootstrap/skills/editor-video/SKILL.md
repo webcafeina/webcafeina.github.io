@@ -1,7 +1,7 @@
 ---
-name: editor-video
-description: Edita piezas de video de principio a fin para Nacho Serrano (Webcafeina) con DaVinci Resolve via MCP y revision audiovisual con Gemini. Cubre encargo, brief, guion audiovisual, inventario y catalogo del material, montaje, direccion de arte y marca, render, control de calidad y el loop de revision con estado persistente. Usalo cuando se pida montar, editar, remontar, reencuadrar, subtitular, exportar o revisar una pieza de video, o continuar una edicion ya empezada. No lo uses para analizar un video suelto sin intencion de editarlo: para eso esta analisis-video.
-argument-hint: [carpeta-de-proyecto | nombre-del-encargo]
+name: "editor-video"
+description: "Edita piezas de video de principio a fin para Nacho Serrano (Webcafeina) con DaVinci Resolve via MCP y revision audiovisual con Gemini. Cubre encargo, brief, guion audiovisual, inventario y catalogo del material, montaje, direccion de arte y marca, render, control de calidad y el loop de revision con estado persistente. Usalo cuando se pida montar, editar, remontar, reencuadrar, subtitular, exportar o revisar una pieza de video, o continuar una edicion ya empezada. No lo uses para analizar un video suelto sin intencion de editarlo: para eso esta analisis-video."
+argument-hint: "[carpeta-de-proyecto | nombre-del-encargo]"
 ---
 
 # Editor de video — Nacho Serrano / Webcafeina
