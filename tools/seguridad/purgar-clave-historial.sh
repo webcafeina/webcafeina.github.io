@@ -11,6 +11,12 @@
 # Procedimiento probado el 2026-09-20 en un clon espejo: deja 0 blobs de index.html
 # y 0 objetos con la cadena 'generativelanguage'.
 #
+# ESTADO 2026-09-20: las ramas claude/* YA estan purgadas y subidas. Falta SOLO `main`,
+# porque GitHub la rechaza desde fuera con "protected branch hook declined". Para main:
+#   - quita temporalmente la proteccion en Settings > Branches, ejecuta con --subir y vuelve
+#     a ponerla; o
+#   - ejecuta este script desde tu Mac, con tus credenciales y la proteccion levantada.
+#
 # Uso:
 #   bash purgar-clave-historial.sh              # simulacro: reescribe en local y verifica, NO sube
 #   bash purgar-clave-historial.sh --subir      # ademas hace push --force de las tres ramas
